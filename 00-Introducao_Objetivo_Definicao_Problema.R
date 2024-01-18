@@ -64,10 +64,3 @@ getwd()
 
 
 
-
-
-
-
-# Projeto utilizando as linguagems SQL e R para realizar uma análise financeira de dados de uma Rede Hospitalar
-
-
