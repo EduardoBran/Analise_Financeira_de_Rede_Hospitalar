@@ -1,7 +1,7 @@
 ####  Projeto (Linguagem SQL) ####
 
 # Configurando o diretório de trabalho
-setwd("~/Desktop/DataScience/CienciaDeDados/1.Big-Data-Analytics-com-R-e-Microsoft-Azure-Machine-Learning/17.Mini-Projeto-1_-_Analise_Exploratoria_de_Dados_Socioeconomicos")
+setwd("~/Desktop/DataScience/CienciaDeDados/1.Big-Data-Analytics-com-R-e-Microsoft-Azure-Machine-Learning/18.Mini-Projeto-2_-_Analise_Financeira_com_Linguagem_SQL_e_Regressao_Linear_em_R")
 getwd()
 
 
@@ -9,6 +9,7 @@ getwd()
 library(sqldf)
 library(dplyr)
 library(dbplyr)
+library(RMySQL)
 
 
 ## Perguntas de Negócio (Linguagem SQL)
@@ -34,9 +35,10 @@ names(dados) <- c("idade", "genero", "tempo_permanencia", "tipo_raca", "gasto_to
 head(dados)
 
 
-# verificando e removendo valores ausentes nas colunas
+## verificando e removendo valores ausentes nas colunas
 colSums(is.na(dados))
 dados <- na.omit(dados)
+
 
 
 ## Conectando ao banco de dados (banco criado utilizando o passo a passo ao final do script)
@@ -336,7 +338,6 @@ media_gasto_idade_acima_3000
 
 
 
-
 #### Configurar um ambiente MySQL no seu sistema Ubuntu. Siga estes passos:
 
 ## Acesso ao MySQL:
@@ -367,5 +368,7 @@ media_gasto_idade_acima_3000
 
 # Esse processo deve criar uma tabela no banco de dados MySQL e permitir que você acesse os dados por meio da conexão con no RStudio.
 # Certifique-se de adaptar todos os detalhes de acordo com as configurações específicas do seu ambiente.
+
+
 
 
