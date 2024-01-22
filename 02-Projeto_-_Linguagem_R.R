@@ -115,9 +115,8 @@ ggplot(tipo_diag_maior_gasto, aes(x = factor(tipo_diagnostico, levels = tipo_dia
   theme_minimal()
 
 
-rm(tipo_diag_maior_gasto)
 rm(maior_gasto)
-rm(top_10_diag_gasto)
+rm(tipo_diag_maior_gasto)
 
 # -> Resposta: O Grupo com maior gasto total no hospital é o 640
 
@@ -130,7 +129,8 @@ rm(top_10_diag_gasto)
 # Verificando a Correlação de Pearson entre duas variáveis (tipo_raca e gasto_total)
 cor.test(dados$tipo_raca, dados$gasto_total, method = "pearson")  # -0.0181643
 
-# - O valor de correlação de aproximadamente 0.01 indica uma correlação fraca entre raça do paciente e gasto em internações
+# - O valor de correlação de aproximadamente 0.01 e um valor p acima de 0.05 indica uma correlação fraca entre raça do paciente e
+#   gasto em internações.
 
 
 # Tipo 2
@@ -151,13 +151,18 @@ rm(modelo_anova)
 
 # Verificando a Correlação através do método ANOVA
 modelo_anova <- aov(gasto_total ~ idade + genero, data = dados)
+modelo_anova2 <- aov(gasto_total ~ factor(idade) + factor(genero), data = dados)
 anova(modelo_anova)
+anova(modelo_anova2)
 
 
+rm(modelo_anova)
 rm(modelo_anova2)
 
-# -> Resposta: Portanto, com base nos resultados da ANOVA, pode-se concluir que a combinação de idade e gênero dos pacientes
-#              tem impacto no gasto total em internações hospitalares.
+# -> Resposta: No modelo_anova ambas as variáveis (idade e genero) o valor-p é menor que 0.05, portanto há um efeito significativo na
+#              combinação de idade e gênero nos custos hospitalares.
+#              No modelo_anova2 apenas a variável idade tem valor-p superior a 0.05, portanto não há um efeito significativo da idade
+#              e gênero nos custos hospitalares.
 
 
 
@@ -172,6 +177,10 @@ dados_treino <- dados[indices, ]
 dados_teste <- dados[-indices, ]
 rm(indices)
 
+
+#  H0: Não há relação linear entre variáveis dependente e independentes.
+#  H1: Há relação linear entre variáveis dependente e independentes.
+
 # Criando Modelo Preditivo
 modelo <- lm(tempo_permanencia ~ idade + genero + tipo_raca, data = dados_treino)
 summary(modelo)
@@ -181,7 +190,6 @@ rm(modelo)
 
 # -> Resposta: O modelo de regressão linear atual, usando idade, gênero e raça como preditores, obteve um valor de R-squared muito baixo e 
 #              um valor de p abaixo de 0.05 e com isso não demonstrou significância estatística e portanto possui baixo poder preditivo
-#              para o tempo de permanência dos pacientes.
 
 
 
@@ -204,10 +212,60 @@ ggplot(df_importancia, aes(x = reorder(Variavel, -Importancia), y = Importancia)
   labs(title = "Importância das Variáveis", x = "Variável", y = "Importância") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10))
 
+
+rm(modelo)
+rm(importancia_ordenada)
+rm(df_importancia)
 # -> Resposta: As variáveis com maior impacto nos custos de internação hospitalar são tempo_permanencia e tipo_diagnostico
 
 
 
+## Modelo Ideal (para verificar quais variáveis tem maior impacto nos custos de internação hospitalares)
+
+modelo_random <- randomForest(gasto_total ~ tempo_permanencia + tipo_diagnostico, data = dados_treino, 
+                              ntree = 100, nodesize = 10)
+print(modelo_random)
+
+modelo_lm <- lm(gasto_total ~ tempo_permanencia + tipo_diagnostico, data = dados_treino)
+summary(modelo_lm)
 
 
-head(dados)
+## Comparando eficácia dos modelos
+
+# Erro Quadrático Médio (MSE)
+predicoes_random <- predict(modelo_random, newdata = dados_teste)
+mse_random <- mean((dados_teste$gasto_total - predicoes_random)^2)
+print(paste("Erro Quadrático Médio (MSE) - Random Forest:", round(mse_random, 2)))
+
+predicoes_lm <- predict(modelo_lm, newdata = dados_teste)
+mse_lm <- mean((dados_teste$gasto_total - predicoes_lm)^2)
+print(paste("Erro Quadrático Médio (MSE) - Regressão Linear:", round(mse_lm, 2)))
+
+
+# R-squared (R²)
+rsquared_random <- 1 - mse_random / var(dados_teste$gasto_total) 
+print(paste("R-squared (R²) - Random Forest:", rsquared_random))  # 0.71 
+
+rsquared_lm <- summary(modelo_lm)$r.squared
+print(paste("R-squared (R²) - Regressão Linear:", rsquared_lm))   # 0.42
+
+
+# Validação Cruzada
+
+# Defina o controle para 10-fold cross-validation
+ctrl <- trainControl(method = "cv", number = 10)
+
+# Realize a validação cruzada para o modelo Random Forest
+cv_results_random <- train(gasto_total ~ tempo_permanencia + tipo_diagnostico, data = dados,
+                           method = "rf", trControl = ctrl)
+
+# Realize a validação cruzada para o modelo de Regressão Linear
+cv_results_lm <- train(gasto_total ~ tempo_permanencia + tipo_diagnostico, data = dados,
+                       method = "lm", trControl = ctrl)
+
+# Exiba os resultados da validação cruzada
+print("Resultados da Validação Cruzada - Random Forest:")
+print(cv_results_random)
+
+print("Resultados da Validação Cruzada - Regressão Linear:")
+print(cv_results_lm)
